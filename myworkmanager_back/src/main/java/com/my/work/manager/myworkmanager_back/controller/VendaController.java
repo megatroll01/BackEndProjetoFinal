@@ -1,6 +1,8 @@
 package com.my.work.manager.myworkmanager_back.controller;
 
+import com.my.work.manager.myworkmanager_back.model.ItemVendaObj;
 import com.my.work.manager.myworkmanager_back.model.VendaObj;
+import com.my.work.manager.myworkmanager_back.service.ProdutoService;
 import com.my.work.manager.myworkmanager_back.service.VendaService;
 import com.my.work.manager.myworkmanager_back.util.CustomResponse;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,6 +20,9 @@ public class VendaController {
 
     @Autowired
     private VendaService vendaService;
+
+    @Autowired 
+    private ProdutoService produtoService;
 
     @GetMapping
     public ResponseEntity<CustomResponse<List<VendaObj>>> listarVendas() {
@@ -41,12 +46,16 @@ public class VendaController {
     @PostMapping
     public ResponseEntity<CustomResponse<VendaObj>> salvarVenda(@RequestBody VendaObj venda) {
         VendaObj vendaSalva = vendaService.salvarVenda(venda);
+        for (ItemVendaObj item : venda.getItens()) {
+            produtoService.atualizarEstoque(item.getProduto().getId(), item.getQuantidade());
+        }
         CustomResponse<VendaObj> response = new CustomResponse<>(vendaSalva, HttpStatus.CREATED);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<CustomResponse<VendaObj>> atualizarVenda(@PathVariable Long id, @RequestBody VendaObj vendaAtualizada) {
+    public ResponseEntity<CustomResponse<VendaObj>> atualizarVenda(@PathVariable Long id,
+            @RequestBody VendaObj vendaAtualizada) {
         Optional<VendaObj> vendaExistente = vendaService.buscarVendaPorId(id);
         if (vendaExistente.isPresent()) {
             vendaAtualizada.setId(id);
